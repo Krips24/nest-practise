@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class StudentService {
@@ -9,39 +9,64 @@ export class StudentService {
     { id: 3, name: 'HBK', age: 40 },
   ];
 
-  //   Method to fetch all students
+  // GET
   getStudents() {
     return this.student;
   }
 
-  //   Method to fetch a student by ID
+  // GET by ID
   getStudentById(id: number) {
     const result = this.student.find((student) => student.id === id);
 
     if (!result) {
-      return { message: 'Student not found' };
+      throw new NotFoundException('Student not found');
     } else return result;
   }
 
-  //   Method to add a new student
-  addStudent(newStudent: { id: number; name: string; age: number }) {
-    // Check if student with the same ID already exists
-    if (this.student.find((student) => student.id === newStudent.id)) {
-      return { message: 'Student with this ID already exists' };
-    }
-
+  // POST
+  addStudent(data: { name: string; age: number }) {
+    const newStudent = {
+      id: Date.now(),
+      ...data,
+    };
     this.student.push(newStudent);
     return { message: 'Student added successfully' };
   }
 
-  //   Method to edit a student
-  editStudent(newDetails: { id: number; name: string; age: number }) {
-    if (!this.student.find((s) => s.id === newDetails.id)) {
-      return { message: 'Student not found' };
-    } else {
-      this.student[this.student.findIndex((s) => s.id === newDetails.id)] =
-        newDetails;
-      return { message: 'Student details updated successfully' };
+  // PUT
+  updateStudent(id: number, data: { name: string; age: number }) {
+    const index = this.student.findIndex((s) => s.id === id);
+
+    // Check if student with the given ID exists
+    if (!this.student.find((s) => s.id === id)) {
+      throw new NotFoundException('Student not found');
     }
+
+    this.student[index] = { id, ...data };
+    return this.student[index];
+  }
+
+  // PATCH
+  patchStudent(id: number, data: Partial<{ name: string; age: number }>) {
+    const student = this.getStudentById(id);
+    Object.assign(student, data);
+    return student;
+  }
+
+  // DELETE
+  deleteStudent(id: number) {
+    // Check if student with the given ID exists
+    if (!this.student.find((s) => s.id == id)) {
+      return { message: 'Student not found' };
+    }
+
+    const deletedStudents = this.student.splice(
+      this.student.findIndex((s) => s.id === id),
+      1,
+    );
+    return {
+      message: 'Student deleted successfully',
+      student: deletedStudents[0],
+    };
   }
 }
